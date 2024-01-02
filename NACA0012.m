@@ -1,7 +1,5 @@
 clc;
 %VORTEX PANEL CODE NACA 0012
-%Name: Smit Patel
-%Name: Rishikesh Bhatt
 
 %Defining initial condition for the problem
 Rho = 1.225;                %freestream density
