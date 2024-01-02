@@ -1,0 +1,1 @@
+Vortex panel method is a numerical method to model irrotational and incompressible fluid flows around solid bodies of defined shapes. This code model fluid flow around NACA 0012 airfoil and plot the lift characteristics for various angles of attack.
