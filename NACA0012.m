@@ -1,10 +1,14 @@
 clc;
 %VORTEX PANEL CODE NACA 0012
+%Name: Smit Patel
+%Name: Rishikesh Bhatt
 
 %Defining initial condition for the problem
-Rho = 1.1225;           %freestream density
-Vinf = 5.5;             %free stream velocity
-alpha = 6*pi/180;       %ngle of attack in radians.
+Rho = 1.225;                %freestream density
+Vinf = 2.3536;              %free stream velocity
+mu_if = 0.00001802;         %dynamic viscosity
+alpha = pi/180*[0,1,2,3,4,5,6,7,8,9];       %Angle of attack in radians
+Re = Rho*Vinf*1/mu_if;       %Reynolds number based on chord length 
 
 %creating fine grid at locations of high curvature (Leading and Trailing
 %edge) and coarse grid for remaining geometry.
@@ -32,7 +36,6 @@ x = [x; X];
 %panels are indexed starting from lower surface near trailing edge and
 %moving in counter-clockwise direction
 N = length(x) - 1;              %Defining number of panels 
-
 
 s = zeros(N,1);                 %matrix [s] for length of panel
 for i = 1:N                     
@@ -79,7 +82,7 @@ end
 for i = 1:N
     for j = 1:N
         I(i,j) = (C(i,j)/2)*log((s(j)^2 + 2*A(i,j)*s(j) + B(i,j))/B(i,j)) + ((D(i,j)-A(i,j)*C(i,j))/sqrt(B(i,j)-A(i,j)^2))*(atan((s(j) + A(i,j))/E(i,j)) - atan(A(i,j)/sqrt(B(i,j)-A(i,j)^2)));
-        if i == j               %condition to ensure that diagonal element of I are always 0 and not NaN.
+        if i == j               %condition to ensure that diagonal element of I are always 0 and not NaN. this is explained in the document.
             I(i,j) = 0;
         end
     end
@@ -92,12 +95,33 @@ I(N,:) = zeros(1,N);
 I(N,1) = 1;
 I(N,N) = 1;
 
-v = 2*pi*Vinf*sin(phi-alpha);   %matrix [v] for RHS 2*pi*Vinf*sin(phi-alpha) terms. 
-v(N,1) = 0;                     %Last element of [v] will be zero due to kutta condition as discussed above.
+%calculating sectional lift coefficient for each angle of attack
+cl = zeros(1,length(alpha));
+for i = 1:length(alpha)
+    v = 2*pi*Vinf*sin(phi-alpha(i));    %matrix [v] for RHS 2*pi*Vinf*sin(phi-alpha) terms. 
+    v(N,1) = 0;                     %Last element of [v] will be zero due to kutta condition as discussed above.
 
-gamma = I\v;                    %solving gamma = inverse[I] * [v]
-Gamma = s .* gamma;             %total circulation = summation of (gamma * panel length) for all panels.
+    gamma = I\v;                    %solving gamma = inverse[I] * [v]
+    Gamma = s .* gamma;             %total circulation = summation of (gamma * panel length) for all panels.
 
-cl = 2*sum(Gamma)/Vinf;         %sectional lift coefficient = 2*total circulation/Vinf. sum(Gamma) will add all elements of Gamma.
-disp("sectional lift coefficient = "+cl)
+    cl(i) = -2*sum(Gamma)/Vinf;      %sectional lift coefficient = 2*total circulation/Vinf. sum(Gamma) will add all elements of Gamma.
+end
+
+%plotting results
 disp("number of panel used = "+N)
+
+plot(alpha*180/pi,cl,'k--s');              %plotting cl vs alpha
+hold on;
+
+%sectional lift coefficient from thin airfoil theory
+CL = 2*pi*alpha;                    
+plot(alpha*180/pi,CL,'k--o'); 
+
+%sectional lift coefficient from the experimental data
+ECL = [0, 0.11, 0.22, 0.33, 0.44, 0.55, 0.66, 0.746, 0.8274, 0.8527];   
+plot(alpha*180/pi,ECL,'k--d');
+
+legend('vortex panel method','thin airfoi theory cl = 2*pi*alpha','Experimental data [1]','Location','north');
+xlabel("angle of attack in degrees");
+ylabel("sectional lift coefficient cl");
+title("cl vs angle of attack for NACA 0012 at Re = "+Re);
